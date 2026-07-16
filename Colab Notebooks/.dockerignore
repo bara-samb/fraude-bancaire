@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.ipynb
+*.csv
+.git/
+.gitignore
+.dockerignore
+docker-compose.yml
+README.md
+train_and_save_model.py

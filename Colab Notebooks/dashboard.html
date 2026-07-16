@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Détecteur de Fraude Bancaire — Dashboard</title>
+  
+  <!-- Typography & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Modern Premium Zinc Palette & Theme Variables */
+    :root[data-theme="light"] {
+      --bg: #fafafa;
+      --card-bg: #ffffff;
+      --border: #e4e4e7;
+      --text: #09090b;
+      --text-muted: #71717a;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --accent: #3b82f6;
+      --success: #10b981;
+      --success-bg: #ecfdf5;
+      --success-border: #a7f3d0;
+      --warning: #f59e0b;
+      --warning-bg: #fffbeb;
+      --warning-border: #fde68a;
+      --danger: #ef4444;
+      --danger-bg: #fef2f2;
+      --danger-border: #fca5a5;
+      --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+      --scrollbar-bg: #f4f4f5;
+      --scrollbar-thumb: #d4d4d8;
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #09090b;
+      --card-bg: #0f0f13;
+      --border: #1e1e24;
+      --text: #fafafa;
+      --text-muted: #a1a1aa;
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --accent: #2563eb;
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.1);
+      --success-border: rgba(16, 185, 129, 0.2);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.1);
+      --warning-border: rgba(245, 158, 11, 0.2);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.1);
+      --danger-border: rgba(239, 68, 68, 0.2);
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+      --scrollbar-bg: #18181b;
+      --scrollbar-thumb: #3f3f46;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'DM Sans', sans-serif;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--scrollbar-bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      border-radius: 4px;
+    }
+
+    /* Header & Navigation */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand svg {
+      width: 32px;
+      height: 32px;
+      fill: var(--primary);
+    }
+
+    .brand h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .brand span {
+      background: var(--primary-hover);
+      color: white;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .api-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #71717a;
+    }
+
+    .status-dot.online {
+      background-color: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .status-dot.offline {
+      background-color: var(--danger);
+      box-shadow: 0 0 8px var(--danger);
+    }
+
+    .btn-icon {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-icon:hover {
+      background-color: var(--border);
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      letter-spacing: -0.2px;
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, select {
+      width: 100%;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      font-weight: 500;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      margin-top: 10px;
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--border);
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .kpi-value {
+      font-size: 26px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Main Section Layout */
+    .main-charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .main-charts {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chart-container {
+      position: relative;
+      height: 220px;
+      width: 100%;
+    }
+
+    /* Prediction Result View */
+    .result-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 0;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .result-placeholder svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      stroke: var(--border);
+    }
+
+    .result-active {
+      display: none;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .result-prediction {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-success {
+      background-color: var(--success-bg);
+      color: var(--success);
+      border: 1px solid var(--success-border);
+    }
+
+    .badge-warning {
+      background-color: var(--warning-bg);
+      color: var(--warning);
+      border: 1px solid var(--warning-border);
+    }
+
+    .badge-danger {
+      background-color: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid var(--danger-border);
+    }
+
+    .risk-box {
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* Probabilities bars */
+    .prob-bar-wrapper {
+      margin-bottom: 12px;
+    }
+
+    .prob-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .prob-bar-bg {
+      height: 8px;
+      background-color: var(--border);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .prob-bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.6s cubic-bezier(0.1, 0.8, 0.25, 1);
+    }
+
+    /* Tables */
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--card-bg);
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .amount-col {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-left-color: white;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      padding: 24px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* Responsiveness enhancements */
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .kpi-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .kpi-value {
+        font-size: 20px;
+      }
+      .main-charts {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .chart-container {
+        height: 180px;
+      }
+      .card {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .kpi-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .brand h1 {
+        font-size: 18px;
+      }
+    }
+
+    /* Guide Sidebar Panel Drawer */
+    .guide-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 420px;
+      max-width: 90vw;
+      height: 100vh;
+      background-color: var(--card-bg);
+      border-left: 1px solid var(--border);
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+      z-index: 1100;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .guide-panel.open {
+      transform: translateX(0);
+    }
+
+    .guide-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.4);
+      z-index: 1090;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .guide-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .guide-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .guide-header h2 {
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.3px;
+    }
+
+    .guide-content {
+      padding: 24px;
+      overflow-y: auto;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .guide-step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .guide-step:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+    }
+
+    .guide-step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .guide-step-body h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .guide-step-body p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .guide-footer {
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+    }
+
+    .guide-footer .btn {
+      flex: 1;
+    }
+
+    /* Tour Highlight styling */
+    .tour-highlight {
+      position: relative;
+      z-index: 1200 !important;
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4), var(--shadow) !important;
+      transition: all 0.3s ease;
+    }
+
+    /* Tour Tooltip */
+    .tour-tooltip {
+      position: absolute;
+      z-index: 1300;
+      background: var(--card-bg);
+      border: 1px solid var(--primary);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+      padding: 16px;
+      width: 320px;
+      max-width: 90vw;
+      font-size: 13px;
+      animation: tooltipFadeIn 0.25s ease-out;
+      pointer-events: auto;
+    }
+
+    @keyframes tooltipFadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tour-tooltip-header {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: var(--primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tour-tooltip-body {
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+
+    .tour-tooltip-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tour-tooltip-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+    }
+
+    .tour-tooltip-btn-next {
+      background: var(--primary);
+      color: white;
+    }
+
+    .tour-tooltip-btn-next:hover {
+      background: var(--primary-hover);
+    }
+
+    .tour-tooltip-btn-prev {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .tour-tooltip-btn-prev:hover {
+      background: var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+      </svg>
+      <h1>Détecteur de Fraude Bancaire</h1>
+      <span>Modèle Random Forest (Colab)</span>
+    </div>
+    
+    <div class="controls">
+      <div class="api-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Détection...</span>
+      </div>
+      
+      <!-- Hidden API Host Configurator -->
+      <input id="apiBase" value="" type="hidden" />
+
+      <!-- Theme Button Toggle -->
+      <button class="btn-icon" id="themeToggle" title="Changer le thème">
+        <svg id="themeMoon" style="width:18px;height:18px;fill:currentColor;" viewBox="0 0 24 24">
+          <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>
+        </svg>
+        <svg id="themeSun" style="width:18px;height:18px;fill:currentColor;display:none;" viewBox="0 0 24 24">
+          <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0-2c.55 0 1-.45 1-1V3c0-.55-.45-1-1-1s-1 .45-1 1v1c0 .55.45 1 1 1zm0 14c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1s1-.45 1-1v-1c0-.55-.45-1-1-1zM5.64 6.64c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41L6.34 4.53c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41l.71.7zM18.36 17.36c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41l.71.71c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41l-.71-.71zM4 11H3c-.55 0-1 .45-1 1s.45 1 1 1h1c.55 0 1-.45 1-1s-.45-1-1-1zm17 0h-1c-.55 0-1 .45-1 1s.45 1 1 1h1c.55 0 1-.45 1-1s-.45-1-1-1zM5.64 17.36l-.71.71c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l.71-.71c.39-.39.39-1.02 0-1.41s-1.02-.39-1.41 0zM18.36 5.64l.71-.71c.39-.39.39-1.02 0-1.41s-1.02-.39-1.41 0l-.71.71c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0z"/>
+        </svg>
+      </button>
+
+      <!-- Help/Guide Button -->
+      <button class="btn-icon" id="guideToggle" title="Afficher le guide d'utilisation" onclick="toggleGuide()">
+        <svg style="width:18px;height:18px;fill:currentColor;" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- KPI Grid metrics -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <span class="kpi-label">Transactions Analysées</span>
+      <span class="kpi-value" id="kpiTotal">0</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Alertes Risque (Suspect)</span>
+      <span class="kpi-value" id="kpiAlertCount" style="color: var(--danger)">0</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Taux d'Alerte</span>
+      <span class="kpi-value" id="kpiAlertRate">0.0%</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Volume Total (FCFA)</span>
+      <span class="kpi-value" id="kpiVolume">0</span>
+    </div>
+  </div>
+
+  <!-- Dashboard layout grid -->
+  <div class="dashboard-grid">
+    
+    <!-- Left column: Testing simulator form -->
+    <div class="card">
+      <div class="card-title">
+        <span>Simulateur de Transaction</span>
+      </div>
+      
+      <form id="txForm" onsubmit="event.preventDefault(); scoreTransaction();">
+        <div class="form-group">
+          <label for="presetSelector">Scénarios / Cas de Test</label>
+          <select id="presetSelector" onchange="applyPresetScenario()">
+            <option value="random">--- Données Aléatoires ---</option>
+            <option value="normal_std">Cas Normal (Paiement Standard)</option>
+            <option value="normal_low">Cas Normal (Retrait ATM Modéré)</option>
+            <option value="alert_high">⚠️ Alerte : Montant Très Élevé (Suspect)</option>
+            <option value="alert_night">⚠️ Alerte : Opération Nocturne Atypique (Suspect)</option>
+            <option value="alert_failed_high">⚠️ Alerte : Échec sur Gros Montant (Suspect)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="id_client">Identifiant Client</label>
+          <input type="text" id="id_client" required placeholder="Ex: 1023, 543..." />
+        </div>
+        
+        <div class="form-group">
+          <label for="numero_compte">Numéro de Compte</label>
+          <input type="number" id="numero_compte" step="any" required placeholder="Ex: 851032.0" />
+        </div>
+
+        <div class="form-group">
+          <label for="montant">Montant (FCFA)</label>
+          <input type="number" id="montant" step="any" min="1" required placeholder="Ex: 45000" />
+        </div>
+
+        <div class="form-group">
+          <label for="type_transaction">Type de Transaction</label>
+          <select id="type_transaction" required>
+            <option value="ATM">Retrait ATM</option>
+            <option value="Paiement en ligne">Paiement en Ligne</option>
+            <option value="Paiement électronique">Paiement Électronique</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="status_operation">Statut de l'Opération</label>
+          <select id="status_operation" required>
+            <option value="Validé">Validé</option>
+            <option value="Echoué">Échoué</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="localisation">Localisation</label>
+          <select id="localisation" required>
+            <!-- Dynamically populated from metadata -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="date">Date & Heure de Transaction</label>
+          <input type="datetime-local" id="date" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="btnSubmit">
+          <span>Analyser la transaction</span>
+        </button>
+
+        <button type="button" class="btn btn-secondary" onclick="generateRandomData()">
+          Générer des données aléatoires
+        </button>
+      </form>
+    </div>
+
+    <!-- Right column: Outputs & Charts -->
+    <div>
+      
+      <!-- Results Card -->
+      <div class="card" id="resultCard">
+        <div class="card-title">
+          <span>Résultats d'Analyse en Temps Réel</span>
+        </div>
+        
+        <div class="result-placeholder" id="resultPlaceholder">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <p>Remplissez le formulaire de gauche et lancez l'analyse pour visualiser la prédiction du modèle.</p>
+        </div>
+
+        <div class="result-active" id="resultActive">
+          <div class="result-header">
+            <div>
+              <span class="badge" id="resultBadge">RISQUE</span>
+            </div>
+            <div class="result-prediction" id="resultPrediction">Normal</div>
+          </div>
+
+          <div class="risk-box" id="riskBox">
+            <span id="riskMessage">Analyse terminée.</span>
+          </div>
+
+          <div class="card-title" style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+            <span>Probabilités calculées par la Forêt Aléatoire</span>
+          </div>
+          
+          <div id="probabilityContainer">
+            <!-- Dynamically populated probability bars -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Card -->
+      <div class="main-charts">
+        <div class="card" style="margin-bottom: 0;">
+          <div class="chart-container">
+            <canvas id="riskDistributionChart"></canvas>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom: 0;">
+          <div class="chart-container">
+            <canvas id="activityChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom Section: Transaction History -->
+  <div class="card history-card">
+    <div class="card-title">
+      <span>Historique Local des Transactions Scoring</span>
+      <button class="btn btn-secondary" onclick="clearHistory()" style="width: auto; margin-top: 0; padding: 6px 12px; font-size: 12px;">
+        Vider l'historique
+      </button>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Date & Heure</th>
+            <th>ID Client</th>
+            <th>N° Compte</th>
+            <th>Type</th>
+            <th>Localisation</th>
+            <th style="text-align: right;">Montant (FCFA)</th>
+            <th style="text-align: center;">Prédiction</th>
+            <th style="text-align: center;">Risque</th>
+          </tr>
+        </thead>
+        <tbody id="historyTableBody">
+          <!-- Dynamically loaded -->
+        </tbody>
+      </table>
+      <div class="empty-state" id="historyEmptyState">
+        Aucune transaction testée pour le moment.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let historyData = [];
+    let riskChart = null;
+    let activityChart = null;
+    let fallbackLocations = [
+      "Dakar", "Thiès", "Saint Louis", "Touba", "Ziguinchor", "Mbour", "Kaolack", 
+      "Diourbel", "Louga", "Kolda", "Tambacounda", "Richard Toll", "Saly", "Rufisque"
+    ];
+
+    // Detect Host & set up API URL default
+    const currentUrl = window.location.origin;
+    const defaultApiUrl = currentUrl.startsWith('file') ? 'http://localhost:8000' : currentUrl;
+    document.getElementById('apiBase').value = defaultApiUrl;
+
+    // Load initial values
+    document.getElementById('date').value = new Date().toISOString().slice(0, 16);
+
+    // Dark/Light Theme Switching
+    const themeToggle = document.getElementById('themeToggle');
+    const themeMoon = document.getElementById('themeMoon');
+    const themeSun = document.getElementById('themeSun');
+
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('bankguard-theme', newTheme);
+      updateThemeIcons(newTheme);
+      updateChartsTheme();
+    });
+
+    function updateThemeIcons(theme) {
+      if (theme === 'dark') {
+        themeSun.style.display = 'block';
+        themeMoon.style.display = 'none';
+      } else {
+        themeSun.style.display = 'none';
+        themeMoon.style.display = 'block';
+      }
+    }
+
+    // Initialize Theme
+    const storedTheme = localStorage.getItem('bankguard-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', storedTheme);
+    updateThemeIcons(storedTheme);
+
+    // Check API Status
+    async function checkApiStatus() {
+      const apiBase = document.getElementById('apiBase').value.replace(/\/$/, '');
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+      try {
+        const res = await fetch(`${apiBase}/health`);
+        if (res.ok) {
+          dot.className = 'status-dot online';
+          text.textContent = 'API Connectée';
+          return true;
+        }
+      } catch (e) {}
+      dot.className = 'status-dot offline';
+      text.textContent = 'API Déconnectée';
+      return false;
+    }
+
+    checkApiStatus();
+    setInterval(checkApiStatus, 8000);
+
+    // Populate categories from /metadata
+    async function loadMetadata() {
+      const apiBase = document.getElementById('apiBase').value.replace(/\/$/, '');
+      const locSelect = document.getElementById('localisation');
+      
+      try {
+        const res = await fetch(`${apiBase}/metadata`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.categories && data.categories.Localisation) {
+            const locs = data.categories.Localisation;
+            locSelect.innerHTML = '';
+            locs.forEach(loc => {
+              const opt = document.createElement('option');
+              opt.value = loc;
+              opt.textContent = loc;
+              if (loc === 'Dakar') opt.selected = true;
+              locSelect.appendChild(opt);
+            });
+            return;
+          }
+        }
+      } catch (e) {}
+      
+      // Fallback
+      locSelect.innerHTML = '';
+      fallbackLocations.forEach(loc => {
+        const opt = document.createElement('option');
+        opt.value = loc;
+        opt.textContent = loc;
+        if (loc === 'Dakar') opt.selected = true;
+        locSelect.appendChild(opt);
+      });
+    }
+
+    // Call metadata loader
+    setTimeout(loadMetadata, 300);
+
+    // Preset Scenarios
+    const presets = {
+      normal_std: {
+        id_client: "1013",
+        numero_compte: 851301.0,
+        montant: 20000,
+        type_transaction: "Paiement en ligne",
+        status_operation: "Validé",
+        localisation: "Thiès",
+        date: () => {
+          const d = new Date();
+          d.setHours(14, 30);
+          return d.toISOString().slice(0, 16);
+        }
+      },
+      normal_low: {
+        id_client: "1022",
+        numero_compte: 851202.0,
+        montant: 14000,
+        type_transaction: "ATM",
+        status_operation: "Validé",
+        localisation: "Ziguinchor",
+        date: () => {
+          const d = new Date();
+          d.setHours(10, 15);
+          return d.toISOString().slice(0, 16);
+        }
+      },
+      alert_high: {
+        id_client: "543",
+        numero_compte: 85453.0,
+        montant: 380000,
+        type_transaction: "Paiement électronique",
+        status_operation: "Validé",
+        localisation: "Dakar",
+        date: () => {
+          const d = new Date();
+          d.setHours(16, 0);
+          return d.toISOString().slice(0, 16);
+        }
+      },
+      alert_night: {
+        id_client: "1023",
+        numero_compte: 851032.0,
+        montant: 185000,
+        type_transaction: "Paiement en ligne",
+        status_operation: "Validé",
+        localisation: "Kaolack",
+        date: () => {
+          const d = new Date();
+          d.setHours(3, 10);
+          return d.toISOString().slice(0, 16);
+        }
+      },
+      alert_failed_high: {
+        id_client: "10360",
+        numero_compte: 8501036.0,
+        montant: 290000,
+        type_transaction: "Paiement en ligne",
+        status_operation: "Echoué",
+        localisation: "Kaolack",
+        date: () => {
+          const d = new Date();
+          d.setHours(23, 45);
+          return d.toISOString().slice(0, 16);
+        }
+      }
+    };
+
+    function applyPresetScenario() {
+      const val = document.getElementById('presetSelector').value;
+      if (val === 'random') {
+        generateRandomData();
+        return;
+      }
+      const p = presets[val];
+      if (p) {
+        document.getElementById('id_client').value = p.id_client;
+        document.getElementById('numero_compte').value = p.numero_compte;
+        document.getElementById('montant').value = p.montant;
+        document.getElementById('type_transaction').value = p.type_transaction;
+        document.getElementById('status_operation').value = p.status_operation;
+        
+        const locSelect = document.getElementById('localisation');
+        let exists = false;
+        for (let i = 0; i < locSelect.options.length; i++) {
+          if (locSelect.options[i].value === p.localisation) {
+            locSelect.selectedIndex = i;
+            exists = true;
+            break;
+          }
+        }
+        if (!exists && locSelect.options.length > 0) {
+          const opt = document.createElement('option');
+          opt.value = p.localisation;
+          opt.textContent = p.localisation;
+          opt.selected = true;
+          locSelect.appendChild(opt);
+        }
+        
+        document.getElementById('date').value = p.date();
+      }
+    }
+
+    // Random generator
+    function generateRandomData() {
+      // reset selector to random
+      document.getElementById('presetSelector').value = 'random';
+      
+      const clientIds = ["1023", "543", "1013", "10360", "1022", "882", "404", "1001"];
+      const accounts = [851032.0, 85453.0, 851301.0, 8501036.0, 851202.0, 850123.0];
+      
+      const idClient = clientIds[Math.floor(Math.random() * clientIds.length)];
+      document.getElementById('id_client').value = idClient;
+      
+      const numCompte = accounts[Math.floor(Math.random() * accounts.length)];
+      document.getElementById('numero_compte').value = numCompte;
+
+      // Higher chance of lower amount, but sometimes high suspicious values
+      const isHighAmount = Math.random() < 0.2;
+      const amount = isHighAmount 
+        ? Math.floor(Math.random() * 400000) + 150000 
+        : Math.floor(Math.random() * 80000) + 2000;
+      document.getElementById('montant').value = amount;
+
+      const types = ["ATM", "Paiement en ligne", "Paiement électronique"];
+      document.getElementById('type_transaction').value = types[Math.floor(Math.random() * types.length)];
+
+      const status = ["Validé", "Validé", "Validé", "Echoué"];
+      document.getElementById('status_operation').value = status[Math.floor(Math.random() * status.length)];
+
+      const locSelect = document.getElementById('localisation');
+      if (locSelect.options.length > 0) {
+        locSelect.selectedIndex = Math.floor(Math.random() * locSelect.options.length);
+      }
+
+      const dateVal = new Date();
+      if (Math.random() < 0.2) {
+        // Set hour to night
+        dateVal.setHours(Math.floor(Math.random() * 5) + 23);
+      }
+      document.getElementById('date').value = dateVal.toISOString().slice(0, 16);
+    }
+
+    generateRandomData();
+
+    // Scoring Transaction
+    async function scoreTransaction() {
+      const apiBase = document.getElementById('apiBase').value.replace(/\/$/, '');
+      const btn = document.getElementById('btnSubmit');
+      
+      const payload = {
+        id_client: document.getElementById('id_client').value,
+        "Numero de compte": parseFloat(document.getElementById('numero_compte').value),
+        "Type de transaction": document.getElementById('type_transaction').value,
+        "Status operation": document.getElementById('status_operation').value,
+        localisation: document.getElementById('localisation').value,
+        date: document.getElementById('date').value + ':00',
+        "Montant": parseFloat(document.getElementById('montant').value),
+      };
+
+      btn.disabled = true;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<div class="spinner"></div><span>Analyse en cours...</span>';
+
+      const resultPlaceholder = document.getElementById('resultPlaceholder');
+      const resultActive = document.getElementById('resultActive');
+
+      try {
+        const res = await fetch(`${apiBase}/predict`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText);
+        }
+
+        const data = await res.json();
+        
+        resultPlaceholder.style.display = 'none';
+        resultActive.style.display = 'block';
+        
+        const predEl = document.getElementById('resultPrediction');
+        predEl.textContent = data.classe_predite;
+
+        const badge = document.getElementById('resultBadge');
+        const riskBox = document.getElementById('riskBox');
+        const riskMsg = document.getElementById('riskMessage');
+
+        badge.className = 'badge';
+        riskBox.className = 'risk-box';
+
+        if (data.niveau_risque === 'ÉLEVÉ') {
+          badge.classList.add('badge-danger');
+          badge.textContent = 'Risque Élevé';
+          predEl.style.color = 'var(--danger)';
+          riskBox.classList.add('badge-danger');
+          riskBox.style.backgroundColor = 'var(--danger-bg)';
+          riskBox.style.border = '1px solid var(--danger-border)';
+          riskMsg.style.color = 'var(--danger)';
+          riskMsg.textContent = '⚠️ ALERTE CRITIQUE : Cette transaction est catégorisée comme SUSPECTE avec un taux de confiance élevé. Recommandation : bloquer immédiatement l\'opération.';
+        } else if (data.niveau_risque === 'MOYEN') {
+          badge.classList.add('badge-warning');
+          badge.textContent = 'Risque Moyen';
+          predEl.style.color = 'var(--warning)';
+          riskBox.classList.add('badge-warning');
+          riskBox.style.backgroundColor = 'var(--warning-bg)';
+          riskBox.style.border = '1px solid var(--warning-border)';
+          riskMsg.style.color = 'var(--warning)';
+          riskMsg.textContent = '🔔 TRANSACTION À SURVEILLER : Comportement atypique détecté. Validation manuelle ou appel de sécurité requis.';
+        } else {
+          badge.classList.add('badge-success');
+          badge.textContent = 'Risque Faible';
+          predEl.style.color = 'var(--success)';
+          riskBox.classList.add('badge-success');
+          riskBox.style.backgroundColor = 'var(--success-bg)';
+          riskBox.style.border = '1px solid var(--success-border)';
+          riskMsg.style.color = 'var(--success)';
+          riskMsg.textContent = '✅ TRANSACTION VALIDÉE : La transaction semble légitime et conforme aux profils habituels.';
+        }
+
+        // Render Probabilities
+        const probContainer = document.getElementById('probabilityContainer');
+        probContainer.innerHTML = '';
+        
+        const classes = Object.keys(data.probabilites).sort((a,b) => {
+          if (a === 'Suspect') return -1;
+          if (b === 'Suspect') return 1;
+          return 0;
+        });
+
+        classes.forEach(cls => {
+          const val = data.probabilites[cls];
+          const pct = Math.round(val * 100);
+          
+          const wrapper = document.createElement('div');
+          wrapper.className = 'prob-bar-wrapper';
+          
+          let color = 'var(--primary)';
+          if (cls === 'Suspect') color = 'var(--danger)';
+          else if (cls === 'Normal') color = 'var(--success)';
+
+          wrapper.innerHTML = `
+            <div class="prob-bar-label">
+              <span>${cls}</span>
+              <span class="mono">${pct}%</span>
+            </div>
+            <div class="prob-bar-bg">
+              <div class="prob-bar-fill" style="width: ${pct}%; background-color: ${color}"></div>
+            </div>
+          `;
+          probContainer.appendChild(wrapper);
+        });
+
+        // Add to history
+        const newTx = {
+          timestamp: payload.date.replace('T', ' '),
+          id_client: payload.id_client,
+          numero_compte: payload.numero_compte,
+          type: payload["Type de transaction"],
+          localisation: payload.localisation,
+          montant: payload["Montant"],
+          prediction: data.classe_predite,
+          risque: data.niveau_risque
+        };
+        historyData.unshift(newTx);
+        saveHistory();
+        renderHistory();
+        updateAnalytics();
+
+      } catch (e) {
+        console.error(e);
+        alert('Erreur lors du scoring de la transaction. Assurez-vous que le serveur FastAPI tourne en arrière-plan.\nDétails: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
+    function saveHistory() {
+      localStorage.setItem('bankguard-colab-tx-history', JSON.stringify(historyData));
+    }
+
+    function loadHistory() {
+      const data = localStorage.getItem('bankguard-colab-tx-history');
+      if (data) {
+        try {
+          historyData = JSON.parse(data);
+        } catch(e) {
+          historyData = [];
+        }
+      }
+      
+      // Si vide, pré-remplir avec des données de test réalistes et des alertes
+      if (historyData.length === 0) {
+        historyData = [
+          {
+            timestamp: new Date(Date.now() - 1000*60*30).toISOString().slice(0, 19).replace('T', ' '),
+            id_client: "543",
+            numero_compte: 85453.0,
+            type: "Paiement électronique",
+            localisation: "Dakar",
+            montant: 380000,
+            prediction: "Suspect",
+            risque: "ÉLEVÉ"
+          },
+          {
+            timestamp: new Date(Date.now() - 1000*60*60*2).toISOString().slice(0, 19).replace('T', ' '),
+            id_client: "1022",
+            numero_compte: 851202.0,
+            type: "ATM",
+            localisation: "Ziguinchor",
+            montant: 14000,
+            prediction: "Normal",
+            risque: "FAIBLE"
+          },
+          {
+            timestamp: new Date(Date.now() - 1000*60*60*10).toISOString().slice(0, 19).replace('T', ' '),
+            id_client: "1023",
+            numero_compte: 851032.0,
+            type: "Paiement en ligne",
+            localisation: "Kaolack",
+            montant: 185000,
+            prediction: "Suspect",
+            risque: "MOYEN"
+          },
+          {
+            timestamp: new Date(Date.now() - 1000*60*60*24).toISOString().slice(0, 19).replace('T', ' '),
+            id_client: "1013",
+            numero_compte: 851301.0,
+            type: "Paiement en ligne",
+            localisation: "Thiès",
+            montant: 20000,
+            prediction: "Normal",
+            risque: "FAIBLE"
+          }
+        ];
+        saveHistory();
+      }
+    }
+
+    function clearHistory() {
+      if (confirm('Voulez-vous vraiment vider tout l\'historique local des analyses ?')) {
+        historyData = [];
+        saveHistory();
+        renderHistory();
+        updateAnalytics();
+      }
+    }
+
+    function renderHistory() {
+      const tbody = document.getElementById('historyTableBody');
+      const emptyState = document.getElementById('historyEmptyState');
+      tbody.innerHTML = '';
+
+      if (historyData.length === 0) {
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      historyData.forEach((tx) => {
+        const tr = document.createElement('tr');
+        
+        let badgeClass = 'badge-success';
+        if (tx.risque === 'ÉLEVÉ') badgeClass = 'badge-danger';
+        else if (tx.risque === 'MOYEN') badgeClass = 'badge-warning';
+
+        tr.innerHTML = `
+          <td>${tx.timestamp}</td>
+          <td class="mono">${tx.id_client}</td>
+          <td class="mono">${tx.numero_compte}</td>
+          <td>${tx.type}</td>
+          <td>${tx.localisation}</td>
+          <td class="amount-col">${tx.montant.toLocaleString()}</td>
+          <td style="text-align: center; font-weight: 700;">${tx.prediction}</td>
+          <td style="text-align: center;"><span class="badge ${badgeClass}">${tx.risque}</span></td>
+        `;
+        
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateAnalytics() {
+      const total = historyData.length;
+      document.getElementById('kpiTotal').textContent = total;
+
+      let alertCount = 0;
+      let totalAmount = 0;
+      
+      historyData.forEach(tx => {
+        totalAmount += tx.montant;
+        if (tx.prediction === 'Suspect') {
+          alertCount++;
+        }
+      });
+
+      document.getElementById('kpiAlertCount').textContent = alertCount;
+      document.getElementById('kpiAlertRate').textContent = total > 0 ? ((alertCount / total) * 100).toFixed(1) + '%' : '0.0%';
+      document.getElementById('kpiVolume').textContent = totalAmount.toLocaleString();
+
+      updateCharts();
+    }
+
+    function initCharts() {
+      // Risk Doughnut Chart
+      const ctxRisk = document.getElementById('riskDistributionChart').getContext('2d');
+      riskChart = new Chart(ctxRisk, {
+        type: 'doughnut',
+        data: {
+          labels: ['Faible', 'Moyen', 'Élevé'],
+          datasets: [{
+            data: [0, 0, 0],
+            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+            borderWidth: 2,
+            borderColor: '#0f0f13'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                color: '#fafafa',
+                font: { family: 'DM Sans', size: 12 }
+              }
+            },
+            title: {
+              display: true,
+              text: 'RÉPARTITION DU RISQUE',
+              color: '#a1a1aa',
+              font: { family: 'DM Sans', weight: 'bold', size: 11 }
+            }
+          }
+        }
+      });
+
+      // Activity Line Chart
+      const ctxActivity = document.getElementById('activityChart').getContext('2d');
+      activityChart = new Chart(ctxActivity, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Montant (FCFA)',
+            data: [],
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            title: {
+              display: true,
+              text: 'FLUX DES MONTANTS ANALYSÉS',
+              color: '#a1a1aa',
+              font: { family: 'DM Sans', weight: 'bold', size: 11 }
+            }
+          },
+          scales: {
+            y: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: {
+                color: '#a1a1aa',
+                font: { family: 'JetBrains Mono', size: 9 },
+                callback: function(value) {
+                  return value >= 1000 ? (value/1000) + 'k' : value;
+                }
+              }
+            },
+            x: {
+              grid: { display: false },
+              ticks: {
+                color: '#a1a1aa',
+                font: { family: 'DM Sans', size: 9 }
+              }
+            }
+          }
+        }
+      });
+
+      updateChartsTheme();
+    }
+
+    function updateCharts() {
+      if (!riskChart || !activityChart) return;
+
+      let low = 0, mid = 0, high = 0;
+      historyData.forEach(tx => {
+        if (tx.risque === 'ÉLEVÉ') high++;
+        else if (tx.risque === 'MOYEN') mid++;
+        else low++;
+      });
+
+      riskChart.data.datasets[0].data = [low, mid, high];
+      riskChart.update();
+
+      const last10 = [...historyData].reverse().slice(-10);
+      const labels = last10.map((tx, idx) => `T-${last10.length - idx}`);
+      const amounts = last10.map(tx => tx.montant);
+
+      activityChart.data.labels = labels;
+      activityChart.data.datasets[0].data = amounts;
+      activityChart.update();
+    }
+
+    function updateChartsTheme() {
+      if (!riskChart || !activityChart) return;
+      const theme = document.documentElement.getAttribute('data-theme');
+      const textColor = theme === 'dark' ? '#fafafa' : '#09090b';
+      const gridColor = theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+      const cardBg = theme === 'dark' ? '#0f0f13' : '#ffffff';
+
+      riskChart.options.plugins.legend.labels.color = textColor;
+      riskChart.data.datasets[0].borderColor = cardBg;
+      riskChart.update();
+
+      activityChart.options.scales.x.ticks.color = theme === 'dark' ? '#a1a1aa' : '#71717a';
+      activityChart.options.scales.y.ticks.color = theme === 'dark' ? '#a1a1aa' : '#71717a';
+      activityChart.options.scales.y.grid.color = gridColor;
+      activityChart.update();
+    }
+
+    window.onload = function() {
+      loadHistory();
+      renderHistory();
+      initCharts();
+      updateAnalytics();
+    }
+
+    // Guide Panel and Tour Interactive Script
+    function toggleGuide(forceState) {
+      const panel = document.getElementById('guidePanel');
+      const overlay = document.getElementById('guideOverlay');
+      const isOpen = panel.classList.contains('open');
+      const nextState = (forceState !== undefined) ? forceState : !isOpen;
+
+      if (nextState) {
+        panel.classList.add('open');
+        overlay.classList.add('open');
+      } else {
+        panel.classList.remove('open');
+        overlay.classList.remove('open');
+      }
+    }
+
+    let currentTourStep = 0;
+    const tourSteps = [
+      {
+        elementId: 'presetSelector',
+        title: 'Étape 1 : Choix du Scénario',
+        body: 'Sélectionnez un scénario type préconfiguré (Normal ou Suspect) ou laissez en mode aléatoire.',
+        position: 'bottom'
+      },
+      {
+        elementId: 'txForm',
+        title: 'Étape 2 : Le Simulateur',
+        body: 'Ce formulaire regroupe les caractéristiques de la transaction analysée. Vous pouvez éditer chaque champ librement.',
+        position: 'right'
+      },
+      {
+        elementId: 'btnSubmit',
+        title: 'Étape 3 : Lancer l\'Analyse',
+        body: 'Cliquez ici pour soumettre la transaction à notre modèle de Machine Learning.',
+        position: 'bottom'
+      },
+      {
+        elementId: 'resultCard',
+        title: 'Étape 4 : Résultats en temps réel',
+        body: 'Une fois l\'analyse lancée, le verdict du modèle s\'affichera ici avec le taux de confiance et les probabilités détaillées.',
+        position: 'left'
+      },
+      {
+        elementId: 'kpiTotal',
+        title: 'Étape 5 : Indicateurs Clés (KPI)',
+        body: 'Ces métriques synthétisent les transactions de la session (volume en FCFA, taux d\'alerte de suspicion).',
+        position: 'bottom'
+      },
+      {
+        elementId: 'historyTableBody',
+        title: 'Étape 6 : Historique & Graphiques',
+        body: 'Consultez ici l\'historique local persistant de vos simulations, ainsi que la répartition du risque sur les graphiques.',
+        position: 'top'
+      }
+    ];
+
+    function showTourStep(index) {
+      clearTour();
+
+      if (index < 0 || index >= tourSteps.length) {
+        endTour();
+        return;
+      }
+
+      currentTourStep = index;
+      const step = tourSteps[index];
+      let el = document.getElementById(step.elementId);
+      if (!el) el = document.querySelector('.' + step.elementId);
+      if (!el) {
+        showTourStep(index + 1);
+        return;
+      }
+
+      el.classList.add('tour-highlight');
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Create tooltip element
+      const tooltip = document.createElement('div');
+      tooltip.className = 'tour-tooltip';
+      tooltip.id = 'tourTooltip';
+
+      const rect = el.getBoundingClientRect();
+      
+      // Calculate position
+      let top = window.scrollY + rect.bottom + 10;
+      let left = window.scrollX + rect.left;
+
+      if (step.position === 'left') {
+        top = window.scrollY + rect.top;
+        left = window.scrollX + rect.left - 340;
+      } else if (step.position === 'top') {
+        top = window.scrollY + rect.top - 180;
+        left = window.scrollX + rect.left;
+      } else if (step.position === 'bottom') {
+        top = window.scrollY + rect.bottom + 10;
+        left = window.scrollX + rect.left;
+      }
+
+      // Keep inside screen bounds
+      if (left < 10) left = 10;
+      if (left + 330 > window.innerWidth) left = window.innerWidth - 330;
+      if (top < 10) top = 10;
+
+      tooltip.style.top = top + 'px';
+      tooltip.style.left = left + 'px';
+
+      const isFirst = index === 0;
+      const isLast = index === tourSteps.length - 1;
+
+      tooltip.innerHTML = `
+        <div class="tour-tooltip-header">
+          <span>${step.title}</span>
+          <span style="font-size:11px;color:var(--text-muted);font-weight:normal;">${index + 1}/${tourSteps.length}</span>
+        </div>
+        <div class="tour-tooltip-body">${step.body}</div>
+        <div class="tour-tooltip-footer">
+          <button class="tour-tooltip-btn tour-tooltip-btn-prev" onclick="showTourStep(${index - 1})" ${isFirst ? 'style="visibility:hidden;"' : ''}>Précédent</button>
+          <div style="display:flex;gap:6px;">
+            <button class="tour-tooltip-btn tour-tooltip-btn-prev" onclick="endTour()">Fermer</button>
+            <button class="tour-tooltip-btn tour-tooltip-btn-next" onclick="showTourStep(${index + 1})">${isLast ? 'Terminer' : 'Suivant'}</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(tooltip);
+    }
+
+    function clearTour() {
+      document.querySelectorAll('.tour-highlight').forEach(el => {
+        el.classList.remove('tour-highlight');
+      });
+      const t = document.getElementById('tourTooltip');
+      if (t) t.remove();
+    }
+
+    function endTour() {
+      clearTour();
+      toggleGuide(true);
+    }
+
+    function startGuidedTour() {
+      toggleGuide(false);
+      showTourStep(0);
+    }
+  </script>
+
+  <!-- Guide Panel Overlay -->
+  <div class="guide-overlay" id="guideOverlay" onclick="toggleGuide(false)"></div>
+
+  <!-- Guide Panel Drawer -->
+  <div class="guide-panel" id="guidePanel">
+    <div class="guide-header">
+      <h2>
+        <svg style="width:20px;height:20px;fill:var(--primary);" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+        </svg>
+        Guide d'Utilisation
+      </h2>
+      <button class="btn-icon" onclick="toggleGuide(false)" title="Fermer le guide">
+        <svg style="width:18px;height:18px;fill:currentColor;" viewBox="0 0 24 24">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="guide-content">
+      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px;">
+        Bienvenue sur le <strong>Détecteur de Fraude Bancaire</strong>. Cette interface simule un système d'analyse et de scoring en temps réel pour détecter les activités bancaires suspectes.
+      </p>
+
+      <div class="guide-step">
+        <div class="guide-step-num">1</div>
+        <div class="guide-step-body">
+          <h3>Choix du Scénario</h3>
+          <p>Utilisez le sélecteur "Scénarios / Cas de Test" ou cliquez sur "Générer des données aléatoires" pour charger un profil de transaction.</p>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="guide-step-num">2</div>
+        <div class="guide-step-body">
+          <h3>Personnalisation (Facultatif)</h3>
+          <p>Modifiez les informations dans le simulateur (identifiant client, numéro de compte, montant, localisation, type de transaction).</p>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="guide-step-num">3</div>
+        <div class="guide-step-body">
+          <h3>Lancement de l'Analyse</h3>
+          <p>Cliquez sur le bouton bleu "Analyser la transaction" pour envoyer les données au modèle Random Forest via l'API.</p>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="guide-step-num">4</div>
+        <div class="guide-step-body">
+          <h3>Lecture des Résultats</h3>
+          <p>Consultez la carte de résultats. Le modèle affiche la classification (Normal ou Suspect) accompagnée du niveau de risque et de la confiance.</p>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="guide-step-num">5</div>
+        <div class="guide-step-body">
+          <h3>Graphiques & Historique</h3>
+          <p>Consultez l'historique complet en bas pour voir les précédentes transactions analysées et suivez les métriques en temps réel sur les graphiques.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="guide-footer">
+      <button class="btn btn-primary" onclick="startGuidedTour()">
+        <span>Lancer la démo guidée</span>
+      </button>
+    </div>
+  </div>
+</body>
+</html>
