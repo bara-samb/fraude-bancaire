@@ -26,8 +26,5 @@ COPY features.json .
 COPY random_forest_model.pkl .
 COPY scaler.pkl .
 
-# Exposer le port de l'application FastAPI
-EXPOSE 8000
-
-# Commande pour démarrer le serveur de production Uvicorn
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Commande pour démarrer le serveur de production Uvicorn en écoutant sur le port de Render ($PORT)
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}"]

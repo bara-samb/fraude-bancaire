@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: fraude-bancaire-api
+    env: docker
+    plan: free
+    dockerContext: "Colab Notebooks"
+    dockerfilePath: "Colab Notebooks/Dockerfile"
