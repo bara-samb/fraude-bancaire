@@ -48,7 +48,7 @@ class TransactionInput(BaseModel):
     id_client: str = Field(..., description="ID unique du client")
     numero_compte: float = Field(..., alias="Numero de compte", description="Numéro de compte du client")
     type_transaction: Literal["ATM", "Paiement en ligne", "Paiement électronique"] = Field(..., alias="Type de transaction")
-    status_operation: Literal["Validé", "Echoué"] = Field(..., alias="Status operation")
+    status_operation: Literal["Validé", "Echoué", "Echoué - Montant", "Echoué - Lieu", "Echoué - Mode"] = Field(..., alias="Status operation")
     localisation: str = Field(..., description="Ville de transaction")
     date: datetime = Field(..., description="Date et heure de transaction, format ISO (ex: 2025-02-10T22:20:00)")
     montant: float = Field(..., alias="Montant", description="Montant de la transaction en FCFA")
@@ -107,8 +107,9 @@ def predict(tx: TransactionInput):
         if type_col in features:
             features[type_col] = 1
 
-        # Status operation
-        status_col = f"Status operation_{tx.status_operation}"
+        # Status operation (mapping validation/failures causes to base model states)
+        status_val = "Validé" if tx.status_operation == "Validé" else ("En attente" if tx.status_operation == "En attente" else "Echoué")
+        status_col = f"Status operation_{status_val}"
         if status_col in features:
             features[status_col] = 1
 

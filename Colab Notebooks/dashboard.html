@@ -855,10 +855,12 @@
         </div>
 
         <div class="form-group">
-          <label for="status_operation">Statut de l'Opération</label>
+          <label for="status_operation">Résultat de la Transaction</label>
           <select id="status_operation" required>
-            <option value="Validé">Validé</option>
-            <option value="Echoué">Échoué</option>
+            <option value="Validé">Validé (Succès)</option>
+            <option value="Echoué - Montant">Échoué (Cause : Montant)</option>
+            <option value="Echoué - Lieu">Échoué (Cause : Lieu/Localisation)</option>
+            <option value="Echoué - Mode">Échoué (Cause : Mode de transaction)</option>
           </select>
         </div>
 
@@ -957,6 +959,7 @@
             <th>Type</th>
             <th>Localisation</th>
             <th style="text-align: right;">Montant (FCFA)</th>
+            <th style="text-align: center;">Résultat</th>
             <th style="text-align: center;">Prédiction</th>
             <th style="text-align: center;">Risque</th>
           </tr>
@@ -1135,7 +1138,7 @@
         numero_compte: 8501036.0,
         montant: 290000,
         type_transaction: "Paiement en ligne",
-        status_operation: "Echoué",
+        status_operation: "Echoué - Montant",
         localisation: "Kaolack",
         date: () => {
           const d = new Date();
@@ -1204,7 +1207,7 @@
       const types = ["ATM", "Paiement en ligne", "Paiement électronique"];
       document.getElementById('type_transaction').value = types[Math.floor(Math.random() * types.length)];
 
-      const status = ["Validé", "Validé", "Validé", "Echoué"];
+      const status = ["Validé", "Validé", "Validé", "Echoué - Montant", "Echoué - Lieu", "Echoué - Mode"];
       document.getElementById('status_operation').value = status[Math.floor(Math.random() * status.length)];
 
       const locSelect = document.getElementById('localisation');
@@ -1341,6 +1344,7 @@
           type: payload["Type de transaction"],
           localisation: payload.localisation,
           montant: payload["Montant"],
+          status_operation: payload["Status operation"],
           prediction: data.classe_predite,
           risque: data.niveau_risque
         };
@@ -1382,6 +1386,7 @@
             type: "Paiement électronique",
             localisation: "Dakar",
             montant: 380000,
+            status_operation: "Validé",
             prediction: "Suspect",
             risque: "ÉLEVÉ"
           },
@@ -1392,6 +1397,7 @@
             type: "ATM",
             localisation: "Ziguinchor",
             montant: 14000,
+            status_operation: "Validé",
             prediction: "Normal",
             risque: "FAIBLE"
           },
@@ -1402,6 +1408,7 @@
             type: "Paiement en ligne",
             localisation: "Kaolack",
             montant: 185000,
+            status_operation: "Echoué - Montant",
             prediction: "Suspect",
             risque: "MOYEN"
           },
@@ -1412,6 +1419,7 @@
             type: "Paiement en ligne",
             localisation: "Thiès",
             montant: 20000,
+            status_operation: "Validé",
             prediction: "Normal",
             risque: "FAIBLE"
           }
@@ -1448,6 +1456,9 @@
         if (tx.risque === 'ÉLEVÉ') badgeClass = 'badge-danger';
         else if (tx.risque === 'MOYEN') badgeClass = 'badge-warning';
 
+        let statusDisplay = tx.status_operation || 'Validé';
+        let statusColor = statusDisplay.startsWith('Echoué') ? 'var(--danger)' : 'var(--success)';
+
         tr.innerHTML = `
           <td>${tx.timestamp}</td>
           <td class="mono">${tx.id_client}</td>
@@ -1455,6 +1466,7 @@
           <td>${tx.type}</td>
           <td>${tx.localisation}</td>
           <td class="amount-col">${tx.montant.toLocaleString()}</td>
+          <td style="text-align: center; font-weight: 500; color: ${statusColor}; font-size: 13px;">${statusDisplay}</td>
           <td style="text-align: center; font-weight: 700;">${tx.prediction}</td>
           <td style="text-align: center;"><span class="badge ${badgeClass}">${tx.risque}</span></td>
         `;
